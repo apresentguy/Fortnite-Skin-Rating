@@ -150,7 +150,8 @@ input,select{width:100%;background:#16161c;color:var(--text);border:1px solid va
 <script>
 /* ---------- config ---------- */
 const SECRET = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","b","a"];  // press these keys in order to toggle admin mode
-const ASSET_DIR = "assets/";            // skin images: assets/<Skin Name>.png
+const ASSET_DIR = "assets/";
+const API_URL = "https://skinranks.rfurtadoe-ae.workers.dev/";   // <- your Worker URL
 
 const RARITIES = {
   "Common":"#7b7f86","Uncommon":"#2f8f3a","Rare":"#1f6fd6","Epic":"#8a3fc4",
@@ -174,10 +175,53 @@ let skins = load(KEY,null) ?? [
 ];
 let votes = load(VKEY,{});   // {skinId: {up:n, down:n, mine:"up"|"down"|null}}
 let isAdmin = sessionStorage.getItem("skinranks.admin")==="1";
+let adminKey = sessionStorage.getItem("skinranks.key") || "";
 let page = "board";
 
 const total = s => FIELDS.reduce((a,[k])=>a+Number(s.ratings[k]||0),0);
 const esc = t => String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- server sync ---------- */
+async function pullSkins(){
+  try{
+    const r = await fetch(API_URL,{headers: adminKey ? {"X-Admin-Key":adminKey} : {}});
+    if(r.status===401){
+      adminKey=""; isAdmin=false;
+      sessionStorage.removeItem("skinranks.admin"); sessionStorage.removeItem("skinranks.key");
+      render(); return false;
+    }
+    if(!r.ok) return false;
+    const data = await r.json();
+    if(Array.isArray(data.skins)){ skins=data.skins; save(KEY,skins); }
+    else if(adminKey){ pushSkins(); }   // server empty: seed it with what you have
+    render(); return true;
+  }catch{ return false; }
+}
+async function pushSkins(){
+  save(KEY,skins);                       // local cache
+  if(!adminKey) return;
+  try{
+    const r = await fetch(API_URL,{method:"PUT",
+      headers:{"Content-Type":"application/json","X-Admin-Key":adminKey},
+      body:JSON.stringify({skins})});
+    if(!r.ok) throw new Error(r.status);
+  }catch{ alert("Couldn't save to the server. Your change is only saved on this device."); }
+}
+async function toggleAdmin(){
+  if(isAdmin){
+    isAdmin=false; adminKey="";
+    sessionStorage.removeItem("skinranks.admin"); sessionStorage.removeItem("skinranks.key");
+    if(page==="add") page="board";
+    closeModal(); await pullSkins(); render(); return;
+  }
+  const k = prompt("Admin password:"); if(!k) return;
+  adminKey = k;
+  const ok = await pullSkins();
+  if(!ok){ adminKey=""; alert("Wrong password (or server unreachable)."); return; }
+  isAdmin=true;
+  sessionStorage.setItem("skinranks.admin","1"); sessionStorage.setItem("skinranks.key",k);
+  closeModal(); render();
+}
 
 /* ---------- scheduling helpers ---------- */
 const todayStr = () => new Date().toISOString().slice(0,10);
@@ -360,7 +404,7 @@ document.addEventListener("click",e=>{
   const eb=t.closest("#editBtn");
   if(eb){ closeModal(); page="add"; document.getElementById("view").innerHTML=renderAdd(byId(eb.dataset.id)); ["Board","Plates","Add"].forEach(n=>document.getElementById("nav"+n).classList.toggle("on",n.toLowerCase()==="add")); return; }
   const db=t.closest("#delBtn");
-  if(db){ if(confirm("Delete this skin?")){ skins=skins.filter(s=>s.id!=db.dataset.id); save(KEY,skins); closeModal(); render(); } return; }
+  if(db){ if(confirm("Delete this skin?")){ skins=skins.filter(s=>s.id!=db.dataset.id); pushSkins(); closeModal(); render(); } return; }
   if(t.closest("#cancelEdit")){ page="board"; render(); return; }
   if(t.closest("#saveBtn")) return saveSkin(t.closest("#saveBtn").dataset.edit);
   const c=t.closest("#view [data-id]");
@@ -390,7 +434,7 @@ function saveSkin(editId){
     applySchedule(skinObj);
     skins.push(skinObj);
   }
-  save(KEY,skins);
+  pushSkins();
 
   if(editId){ page="board"; render(); return; }
   render();
@@ -410,14 +454,12 @@ document.addEventListener("keydown",e=>{
   seq.push(e.key.length===1?e.key.toLowerCase():e.key);
   seq=seq.slice(-SECRET.length);
   if(seq.join()===SECRET.join()){
-    seq=[]; isAdmin=!isAdmin;
-    if(isAdmin) sessionStorage.setItem("skinranks.admin","1");
-    else { sessionStorage.removeItem("skinranks.admin"); if(page==="add") page="board"; }
-    closeModal(); render();
+    seq=[]; toggleAdmin();
   }
 });
 
 render();
+pullSkins();
 </script>
 </body>
 </html>
