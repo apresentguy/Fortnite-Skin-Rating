@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skin Ranks</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#000; --panel:#0e0e12; --line:#26262e; --text:#eee; --dim:#8b8b97;
+  --pill:#7a7a7a; --gold:#c9a100; --silver:#6b6a66; --bronze:#8a3f10;
+  --accent:#ffcc00;
+  --display:'Barlow Condensed',Impact,sans-serif; --body:'Barlow',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--body);display:flex;min-height:100vh}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* sidebar */
+aside{width:190px;flex:none;border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:8px;position:sticky;top:0;height:100vh}
+.brand{font-family:var(--display);font-weight:800;font-size:28px;line-height:1;margin-bottom:18px;letter-spacing:.5px}
+.nav{background:transparent;border:1px solid var(--line);color:var(--text);padding:11px 12px;border-radius:10px;text-align:left;font-weight:600}
+.nav:hover{border-color:#555}
+.nav.on{background:var(--accent);color:#000;border-color:var(--accent)}
+.spacer{flex:1}
+.adminbadge{font-size:12px;color:var(--dim)}
+
+main{flex:1;min-width:0;padding:28px 24px 80px}
+h1{font-family:var(--display);font-size:40px;font-weight:800;margin-bottom:4px}
+.sub{color:var(--dim);margin-bottom:26px}
+
+/* cards */
+.card{width:34px;height:34px;border-radius:7px;position:relative;cursor:pointer;overflow:hidden;border:0;padding:0;flex:none;transition:transform .12s}
+.card:hover{transform:scale(1.18);z-index:5}
+.card img{width:100%;height:100%;object-fit:cover;display:block}
+.card .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:16px;color:#ffffffcc}
+.card .sc{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);background:#000c;color:#fff;font-size:7px;font-weight:700;padding:0 4px;border-radius:3px;line-height:10px}
+.card.lg{width:46px;height:46px;border-radius:9px}
+.card.lg .sc{font-size:8px;line-height:11px}
+.card.sched::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,#0009 0 6px,#0000 6px 12px);border-radius:inherit}
+
+/* podium */
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:14px;height:320px;margin:10px auto 34px;max-width:520px}
+.slot{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.slot .top{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:8px;min-height:46px;align-items:flex-end}
+.bar{width:100%;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.bar b{width:min(96px,80%);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:56px;font-weight:800;color:#fff;border:1px solid #000}
+.s1 .bar{height:240px;background:var(--gold)} .s1 .bar b{background:#ffcc00;color:#fff}
+.s2 .bar{height:190px;background:var(--silver)} .s2 .bar b{background:#7d7b75}
+.s3 .bar{height:160px;background:var(--bronze)} .s3 .bar b{background:#a5511a}
+.s1{order:2}.s2{order:1}.s3{order:3}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:44px 20px}
+.group{display:flex;flex-direction:column;align-items:center;gap:12px}
+.pill{background:var(--pill);color:#fff;font-weight:700;font-size:13px;padding:2px 14px;border-radius:5px}
+.cards{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:170px}
+.shared{font-size:11px;color:var(--dim)}
+
+/* nameplates */
+.plates{display:flex;flex-direction:column;gap:8px;max-width:640px}
+.plate{display:flex;align-items:center;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 14px 8px 8px;cursor:pointer;text-align:left;color:var(--text);width:100%}
+.plate:hover{border-color:#666}
+.plate .rk{font-family:var(--display);font-weight:800;font-size:26px;width:44px;text-align:center;color:var(--dim)}
+.plate:nth-child(-n+1) .rk{color:var(--accent)}
+.plate .nm{flex:1;font-weight:600;font-size:17px}
+.plate .rar{font-size:12px;color:var(--dim)}
+.plate .tot{font-family:var(--display);font-weight:800;font-size:24px}
+.plate .tot small{font-size:13px;color:var(--dim);font-weight:600}
+.plate .r1{border-color:var(--gold)}
+.plate.sched{border-style:dashed}
+.soon{display:inline-block;margin-left:6px;background:#2a2f45;color:#9db4ff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;vertical-align:middle}
+
+/* tooltip */
+#tip{position:fixed;pointer-events:none;background:#15151bf2;border:1px solid #3a3a46;border-radius:10px;padding:10px 12px;font-size:13px;z-index:50;min-width:170px;display:none}
+#tip h4{font-size:15px;margin-bottom:2px}
+#tip .rar{color:var(--dim);font-size:12px;margin-bottom:6px}
+#tip .row{display:flex;justify-content:space-between;gap:16px}
+#tip .row.t{margin-top:5px;padding-top:5px;border-top:1px solid var(--line);font-weight:700}
+
+/* modal */
+.veil{position:fixed;inset:0;background:#000b;display:none;place-items:center;z-index:60;padding:16px}
+.veil.open{display:grid}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;width:min(440px,100%);max-height:92vh;overflow:auto;padding:22px}
+.mh{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+.mh .card{width:96px;height:96px;border-radius:14px;cursor:default}
+.mh .card:hover{transform:none}
+.mh .card .ph{font-size:40px}
+.mh h2{font-family:var(--display);font-size:32px;font-weight:800;line-height:1}
+.mh .rar{color:var(--dim);margin-top:4px}
+.mh .rdate{color:#9db4ff;margin-top:2px;font-size:13px;font-weight:600}
+.stat{margin-bottom:11px}
+.stat .l{display:flex;justify-content:space-between;font-size:14px;margin-bottom:4px}
+.meter{height:8px;background:#22222a;border-radius:6px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+.total span{font-weight:600}
+.total b{font-family:var(--display);font-size:40px;font-weight:800}
+.total b small{font-size:18px;color:var(--dim)}
+.vote{display:flex;align-items:center;gap:10px;margin-top:8px}
+.vote .q{color:var(--dim);font-size:14px;flex:1}
+.vbtn{background:#1b1b22;border:1px solid var(--line);color:var(--text);border-radius:10px;padding:8px 14px;font-weight:600;font-size:15px}
+.vbtn:hover{border-color:#666}
+.vbtn.on{background:var(--accent);color:#000;border-color:var(--accent)}
+.macts{display:flex;gap:8px;margin-top:18px}
+.close{margin-left:auto}
+
+/* admin form */
+label{display:block;font-size:13px;color:var(--dim);margin:12px 0 4px}
+input,select{width:100%;background:#16161c;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px 11px;font:inherit}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.btn{background:var(--accent);color:#000;border:0;border-radius:10px;padding:11px 18px;font-weight:700}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:#3a1216;color:#ff8b94;border:1px solid #5b1c22}
+.btn.sm{padding:7px 12px;font-size:13px;border-radius:8px}
+.msg{margin-top:10px;font-size:13px;color:#7be495;min-height:18px}
+.msg.err{color:#ff8b94}
+.empty{color:var(--dim);padding:40px 0}
+.hint{font-size:12px;color:var(--dim);margin-top:-6px;margin-bottom:2px}
+.sectitle{font-family:var(--display);font-size:22px;font-weight:800;margin:34px 0 10px}
+
+@media(max-width:760px){
+  body{flex-direction:column}
+  aside{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line);padding:12px}
+  .brand{margin:0 8px 0 0;align-self:center}.spacer{display:none}
+  .grid{grid-template-columns:repeat(2,1fr)}
+  main{padding:20px 14px 60px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="brand">SKIN<br>RANKS</div>
+  <button class="nav on" id="navBoard">Leaderboard</button>
+  <button class="nav" id="navPlates">Goblin Ladder</button>
+  <button class="nav" id="navAdd" hidden>Add a skin</button>
+  <div class="spacer"></div>
+  <div class="adminbadge" id="adminState"></div>
+</aside>
+
+<main id="view"></main>
+
+<div id="tip"></div>
+
+<div class="veil" id="veil"><div class="modal" id="modal"></div></div>
+
+<script>
+/* ---------- config ---------- */
+const SECRET = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","b","a"];  // press these keys in order to toggle admin mode
+const ASSET_DIR = "assets/";            // skin images: assets/<Skin Name>.png
+
+const RARITIES = {
+  "Common":"#7b7f86","Uncommon":"#2f8f3a","Rare":"#1f6fd6","Epic":"#8a3fc4",
+  "Legendary":"#c96a12","Mythic":"#c9a100","Exotic":"#1fb3c9","Transcendent":"#d8324a",
+  "Marvel Series":"#a11b24","DC Series":"#1b3f8a","Icon Series":"#1fa5b5",
+  "Gaming Legends Series":"#5b3fc4","Star Wars Series":"#2a2f6b","Dark Series":"#c42fa8",
+  "Shadow Series":"#3a3a44","Slurp Series":"#1fc9a1","Lava Series":"#d8501f",
+  "Frozen Series":"#7fc4ea","Platform Series":"#4a5cc9"
+};
+const FIELDS = [["rarity","Rarity"],["usage","Usage"],["wishlist","Wishlist"],["price","Price"]];
+
+/* ---------- storage ---------- */
+const KEY="skinranks.skins.v1", VKEY="skinranks.votes.v1";
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+let skins = load(KEY,null) ?? [
+  {id:1,name:"Demo Skin One",rarity:"Legendary",ratings:{rarity:9,usage:8,wishlist:9,price:7},releaseDate:null},
+  {id:2,name:"Demo Skin Two",rarity:"Epic",ratings:{rarity:7,usage:8,wishlist:6,price:8},releaseDate:null},
+  {id:3,name:"Demo Skin Three",rarity:"Rare",ratings:{rarity:5,usage:6,wishlist:5,price:6},releaseDate:null},
+  {id:4,name:"Demo Skin Four",rarity:"Icon Series",ratings:{rarity:7,usage:8,wishlist:6,price:8},releaseDate:null}
+];
+let votes = load(VKEY,{});   // {skinId: {up:n, down:n, mine:"up"|"down"|null}}
+let isAdmin = sessionStorage.getItem("skinranks.admin")==="1";
+let page = "board";
+
+const total = s => FIELDS.reduce((a,[k])=>a+Number(s.ratings[k]||0),0);
+const esc = t => String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- scheduling helpers ---------- */
+const todayStr = () => new Date().toISOString().slice(0,10);
+const addDays = (dateStr,n) => { const d=new Date(dateStr+"T00:00:00"); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+const isLive = s => !s.releaseDate || s.releaseDate<=todayStr();
+
+// all scheduled skins (have a releaseDate), in queue order (earliest first)
+function scheduleQueue(excludeId){
+  return skins.filter(s=>s.releaseDate && s.id!=excludeId)
+              .sort((a,b)=>a.releaseDate.localeCompare(b.releaseDate)||a.id-b.id);
+}
+// suggest the next open day after the last scheduled skin, so new skins auto-queue one day after another
+function nextSuggestedDate(){
+  const q=scheduleQueue(null);
+  return q.length ? addDays(q[q.length-1].releaseDate,1) : todayStr();
+}
+// place `skin` into the schedule at its own releaseDate, then push any later skin in the
+// queue forward one day at a time so nothing collides (this is what makes "change skin 50's
+// date" ripple forward through skin 51, 52, ... automatically)
+function applySchedule(skin){
+  if(!skin.releaseDate) return;
+  const merged=[...scheduleQueue(skin.id),skin].sort((a,b)=>a.releaseDate.localeCompare(b.releaseDate)||a.id-b.id);
+  for(let i=1;i<merged.length;i++){
+    if(merged[i].releaseDate<=merged[i-1].releaseDate){
+      merged[i].releaseDate=addDays(merged[i-1].releaseDate,1);
+    }
+  }
+}
+
+/* dense ranking: equal totals share a position. Only ever includes LIVE (released) skins —
+   scheduled ones stay admin-only until their release date. */
+function ranked(){
+  const sorted=[...skins].filter(isLive).sort((a,b)=>total(b)-total(a)||a.name.localeCompare(b.name));
+  const groups=[]; let last=null;
+  sorted.forEach(s=>{
+    const t=total(s);
+    if(t!==last){groups.push({rank:groups.length+1,score:t,items:[]});last=t}
+    groups[groups.length-1].items.push(s);
+  });
+  return groups;
+}
+
+/* ---------- pieces ---------- */
+function cardHTML(s,lg){
+  const col=RARITIES[s.rarity]||"#555";
+  const sched=!isLive(s);
+  return `<button class="card ${lg?'lg':''} ${sched?'sched':''}" data-id="${s.id}" style="background:${col}" aria-label="${esc(s.name)}, score ${total(s)}">
+    <span class="ph">${esc(s.name[0]||"?")}</span>
+    <img src="${ASSET_DIR}${encodeURIComponent(s.name)}.png" alt="" onerror="this.remove()">
+    <span class="sc">${total(s)}</span></button>`;
+}
+
+function renderBoard(){
+  const g=ranked();
+  if(!g.length) return `<h1>Leaderboard</h1><p class="empty">No skins rated yet.${isAdmin?' Use “Add a skin” to add the first one.':''}</p>`;
+  const pod=[1,2,3].map(r=>{
+    const grp=g.find(x=>x.rank===r);
+    return `<div class="slot s${r}"><div class="top">${grp?grp.items.map(s=>cardHTML(s,true)).join(""):""}</div>
+      <div class="bar"><b>${r}</b></div></div>`;
+  }).join("");
+  const rest=g.filter(x=>x.rank>3).map(x=>`
+    <div class="group"><span class="pill">#${x.rank}</span>
+    <div class="cards">${x.items.map(s=>cardHTML(s)).join("")}</div>
+    <span class="shared">${x.score} pts</span></div>`).join("");
+  return `<h1>Leaderboard</h1><p class="sub">Hover a card for its scores, click for the full breakdown.</p>
+    <div class="podium">${pod}</div><div class="grid">${rest}</div>`;
+}
+
+function renderPlates(){
+  const g=ranked();
+  if(!g.length) return `<h1>Goblin Ladder</h1><p class="empty">No skins rated yet.</p>`;
+  return `<h1>Goblin Ladder</h1><p class="sub">Highest score to lowest.</p><div class="plates">`+
+    g.flatMap(x=>x.items.map(s=>`
+      <button class="plate" data-id="${s.id}">
+        <span class="rk">${x.rank}</span>${cardHTML(s,true).replace('<button','<span').replace('</button>','</span>')}
+        <span class="nm">${esc(s.name)}<br><span class="rar">${esc(s.rarity)}</span></span>
+        <span class="tot">${x.score}<small>/40</small></span></button>`)).join("")+`</div>`;
+}
+
+function renderScheduled(){
+  const q=scheduleQueue(null).filter(s=>!isLive(s));
+  if(!q.length) return "";
+  return `<div class="sectitle">Scheduled skins <span class="soon">admin only</span></div>
+  <p class="sub" style="margin-bottom:14px">Hidden from the Leaderboard and Ladder until their release date. New skins auto-queue one day after the last one below — edit a date and everything after it shifts forward to stay in order.</p>
+  <div class="plates">${q.map(s=>`
+    <button class="plate sched" data-id="${s.id}">
+      ${cardHTML(s,true).replace('<button','<span').replace('</button>','</span>')}
+      <span class="nm">${esc(s.name)}<br><span class="rar">Releases ${s.releaseDate}</span></span>
+      <span class="tot">${total(s)}<small>/40</small></span></button>`).join("")}</div>`;
+}
+
+function renderAdd(edit){
+  const s=edit||{name:"",rarity:"Common",ratings:{},releaseDate:null};
+  const relDefault = edit ? (s.releaseDate||"") : nextSuggestedDate();
+  const num=(k,l)=>`<div><label for="f_${k}">${l} rating (1–10)</label>
+    <input id="f_${k}" type="number" min="1" max="10" step="1" value="${s.ratings[k]??""}"></div>`;
+  return `<h1>${edit?'Edit skin':'Add a skin'}</h1><p class="sub">Images load from <code>assets/${esc(s.name||"Skin Name")}.png</code></p>
+  <div style="max-width:440px">
+    <label for="f_rarity_sel">Rarity</label>
+    <select id="f_rarity_sel">${Object.keys(RARITIES).map(r=>`<option ${r===s.rarity?'selected':''}>${r}</option>`).join("")}</select>
+    <label for="f_name">Name</label><input id="f_name" value="${esc(s.name)}" autocomplete="off">
+    <div class="two">${num("rarity","Rarity")}${num("usage","Usage")}${num("wishlist","Wishlist")}${num("price","Price")}</div>
+    <label for="f_release">Release date</label>
+    <input id="f_release" type="date" value="${relDefault}">
+    <div class="hint">${edit?'Change this to reschedule — every later skin in the queue shifts forward to keep a clean one-a-day order.':'Auto-filled to the day after your last scheduled skin. Leave blank, or set it to today or earlier, to publish immediately.'}</div>
+    <div style="margin-top:18px;display:flex;gap:8px">
+      <button class="btn" id="saveBtn" data-edit="${edit?edit.id:''}">Save skin</button>
+      ${edit?'<button class="btn ghost" id="cancelEdit">Cancel</button>':''}
+    </div>
+    <div class="msg" id="formMsg"></div>
+  </div>
+  ${edit?'':renderScheduled()}`;
+}
+
+function render(){
+  document.getElementById("navAdd").hidden=!isAdmin;
+  document.getElementById("adminState").textContent=isAdmin?"Admin mode on":"";
+  ["Board","Plates","Add"].forEach(n=>document.getElementById("nav"+n).classList.toggle("on",page===n.toLowerCase()));
+  const v=document.getElementById("view");
+  v.innerHTML = page==="board"?renderBoard():page==="plates"?renderPlates():renderAdd();
+}
+
+/* ---------- tooltip ---------- */
+const tip=document.getElementById("tip");
+const byId=id=>skins.find(s=>s.id==id);
+function tipHTML(s){
+  const schedLine = !isLive(s) ? `<div class="row t" style="border-top:0;color:#9db4ff"><span>Releases</span><span>${s.releaseDate}</span></div>` : "";
+  return `<h4>${esc(s.name)}</h4><div class="rar">${esc(s.rarity)}</div>`+
+   FIELDS.map(([k,l])=>`<div class="row"><span>${l}</span><span>${s.ratings[k]}/10</span></div>`).join("")+
+   `<div class="row t"><span>Total</span><span>${total(s)}/40</span></div>`+schedLine;
+}
+document.addEventListener("mouseover",e=>{
+  const el=e.target.closest("[data-id]"); if(!el||!document.getElementById("view").contains(el)) return;
+  const s=byId(el.dataset.id); if(!s) return; tip.innerHTML=tipHTML(s); tip.style.display="block";
+});
+document.addEventListener("mousemove",e=>{
+  if(tip.style.display!=="block") return;
+  const w=tip.offsetWidth,h=tip.offsetHeight;
+  tip.style.left=Math.min(e.clientX+16,innerWidth-w-8)+"px";
+  tip.style.top=Math.min(e.clientY+16,innerHeight-h-8)+"px";
+});
+document.addEventListener("mouseout",e=>{ if(e.target.closest("[data-id]")) tip.style.display="none"; });
+
+/* ---------- modal ---------- */
+const veil=document.getElementById("veil"), modal=document.getElementById("modal");
+function openModal(id){
+  const s=byId(id); if(!s) return; tip.style.display="none";
+  const v=votes[id]||{up:0,down:0,mine:null};
+  const schedLine = !isLive(s) ? `<div class="rdate">Releases ${s.releaseDate} · admin-only until then</div>` : "";
+  modal.innerHTML=`
+   <div class="mh">${cardHTML(s).replace('<button','<span').replace('</button>','</span>')}
+     <div><h2>${esc(s.name)}</h2><div class="rar">${esc(s.rarity)}</div>${schedLine}</div>
+     <button class="btn ghost close" id="closeM" aria-label="Close">✕</button></div>
+   ${FIELDS.map(([k,l])=>`<div class="stat"><div class="l"><span>${l}</span><span>${s.ratings[k]}/10</span></div>
+      <div class="meter"><i style="width:${s.ratings[k]*10}%"></i></div></div>`).join("")}
+   <div class="total"><span>Total score</span><b>${total(s)}<small>/40</small></b></div>
+   <div class="vote"><span class="q">Was this rating right?</span>
+     <button class="vbtn ${v.mine==='up'?'on':''}" data-vote="up" data-id="${id}">👍 ${v.up}</button>
+     <button class="vbtn ${v.mine==='down'?'on':''}" data-vote="down" data-id="${id}">👎 ${v.down}</button></div>
+   ${isAdmin?`<div class="macts"><button class="btn ghost" id="editBtn" data-id="${id}">Edit</button>
+     <button class="btn danger" id="delBtn" data-id="${id}">Delete</button></div>`:""}`;
+  veil.classList.add("open"); document.getElementById("closeM").focus();
+}
+const closeModal=()=>veil.classList.remove("open");
+veil.addEventListener("click",e=>{ if(e.target===veil) closeModal(); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+
+/* ---------- actions ---------- */
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const vb=t.closest("[data-vote]");
+  if(vb){
+    const id=vb.dataset.id, dir=vb.dataset.vote;
+    const v=votes[id]=votes[id]||{up:0,down:0,mine:null};
+    if(v.mine) v[v.mine]--;
+    if(v.mine===dir) v.mine=null; else {v[dir]++; v.mine=dir;}
+    save(VKEY,votes); openModal(id); return;
+  }
+  if(t.closest("#closeM")) return closeModal();
+  const eb=t.closest("#editBtn");
+  if(eb){ closeModal(); page="add"; document.getElementById("view").innerHTML=renderAdd(byId(eb.dataset.id)); ["Board","Plates","Add"].forEach(n=>document.getElementById("nav"+n).classList.toggle("on",n.toLowerCase()==="add")); return; }
+  const db=t.closest("#delBtn");
+  if(db){ if(confirm("Delete this skin?")){ skins=skins.filter(s=>s.id!=db.dataset.id); save(KEY,skins); closeModal(); render(); } return; }
+  if(t.closest("#cancelEdit")){ page="board"; render(); return; }
+  if(t.closest("#saveBtn")) return saveSkin(t.closest("#saveBtn").dataset.edit);
+  const c=t.closest("#view [data-id]");
+  if(c) openModal(c.dataset.id);
+});
+
+function saveSkin(editId){
+  const msg=document.getElementById("formMsg"); msg.className="msg";
+  const name=document.getElementById("f_name").value.trim();
+  const rarity=document.getElementById("f_rarity_sel").value;
+  const releaseDate=document.getElementById("f_release").value || null;
+  const ratings={};
+  for(const [k,l] of FIELDS){
+    const n=Number(document.getElementById("f_"+k).value);
+    if(!Number.isInteger(n)||n<1||n>10){ msg.className="msg err"; msg.textContent=`${l} rating must be a whole number from 1 to 10.`; return; }
+    ratings[k]=n;
+  }
+  if(!name){ msg.className="msg err"; msg.textContent="Enter a skin name."; return; }
+
+  let skinObj;
+  if(editId){
+    skinObj=byId(editId);
+    Object.assign(skinObj,{name,rarity,ratings,releaseDate});
+    applySchedule(skinObj);
+  } else {
+    skinObj={id:Date.now(),name,rarity,ratings,releaseDate};
+    applySchedule(skinObj);
+    skins.push(skinObj);
+  }
+  save(KEY,skins);
+
+  if(editId){ page="board"; render(); return; }
+  render();
+  const m=document.getElementById("formMsg");
+  if(m) m.textContent = skinObj.releaseDate && skinObj.releaseDate>todayStr()
+    ? `Saved “${name}” — queued to release ${skinObj.releaseDate}.`
+    : `Saved “${name}” — live now.`;
+}
+
+/* nav */
+document.getElementById("navBoard").onclick=()=>{page="board";render()};
+document.getElementById("navPlates").onclick=()=>{page="plates";render()};
+document.getElementById("navAdd").onclick=()=>{page="add";render()};
+let seq=[];
+document.addEventListener("keydown",e=>{
+  if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  seq.push(e.key.length===1?e.key.toLowerCase():e.key);
+  seq=seq.slice(-SECRET.length);
+  if(seq.join()===SECRET.join()){
+    seq=[]; isAdmin=!isAdmin;
+    if(isAdmin) sessionStorage.setItem("skinranks.admin","1");
+    else { sessionStorage.removeItem("skinranks.admin"); if(page==="add") page="board"; }
+    closeModal(); render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
