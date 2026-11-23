@@ -224,8 +224,11 @@ async function toggleAdmin(){
 }
 
 /* ---------- scheduling helpers ---------- */
-const todayStr = () => new Date().toISOString().slice(0,10);
-const addDays = (dateStr,n) => { const d=new Date(dateStr+"T00:00:00"); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); };
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const todayStr = () => iso(new Date());
+const addDays = (dateStr,n) => { const d=new Date(dateStr+"T00:00:00"); d.setDate(d.getDate()+n); return iso(d); };
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtDate = d => { if(!d) return ""; const [y,m,dd]=d.split("-"); return `${+dd} ${MONTHS[+m-1]} ${y}`; };
 const isLive = s => !s.releaseDate || s.releaseDate<=todayStr();
 
 // all scheduled skins (have a releaseDate), in queue order (earliest first)
@@ -236,7 +239,9 @@ function scheduleQueue(excludeId){
 // suggest the next open day after the last scheduled skin, so new skins auto-queue one day after another
 function nextSuggestedDate(){
   const q=scheduleQueue(null);
-  return q.length ? addDays(q[q.length-1].releaseDate,1) : todayStr();
+  if(!q.length) return todayStr();
+  const next=addDays(q[q.length-1].releaseDate,1);
+  return next<todayStr() ? todayStr() : next;
 }
 // place `skin` into the schedule at its own releaseDate, then push any later skin in the
 // queue forward one day at a time so nothing collides (this is what makes "change skin 50's
@@ -309,7 +314,7 @@ function renderScheduled(){
   <div class="plates">${q.map(s=>`
     <button class="plate sched" data-id="${s.id}">
       ${cardHTML(s,true).replace('<button','<span').replace('</button>','</span>')}
-      <span class="nm">${esc(s.name)}<br><span class="rar">Releases ${s.releaseDate}</span></span>
+      <span class="nm">${esc(s.name)}<br><span class="rar">Releases ${fmtDate(s.releaseDate)}</span></span>
       <span class="tot">${total(s)}<small>/40</small></span></button>`).join("")}</div>`;
 }
 
@@ -326,7 +331,7 @@ function renderAdd(edit){
     <div class="two">${num("rarity","Rarity")}${num("usage","Usage")}${num("wishlist","Wishlist")}${num("price","Price")}</div>
     <label for="f_release">Release date</label>
     <input id="f_release" type="date" value="${relDefault}">
-    <div class="hint">${edit?'Change this to reschedule — every later skin in the queue shifts forward to keep a clean one-a-day order.':'Auto-filled to the day after your last scheduled skin. Leave blank, or set it to today or earlier, to publish immediately.'}</div>
+    <div class="hint" id="relPreview" style="color:#9db4ff;font-weight:600">${relDefault?fmtDate(relDefault):""}</div> — every later skin in the queue shifts forward to keep a clean one-a-day order.':'Auto-filled to the day after your last scheduled skin. Leave blank, or set it to today or earlier, to publish immediately.'}</div>
     <div style="margin-top:18px;display:flex;gap:8px">
       <button class="btn" id="saveBtn" data-edit="${edit?edit.id:''}">Save skin</button>
       ${edit?'<button class="btn ghost" id="cancelEdit">Cancel</button>':''}
@@ -348,7 +353,7 @@ function render(){
 const tip=document.getElementById("tip");
 const byId=id=>skins.find(s=>s.id==id);
 function tipHTML(s){
-  const schedLine = !isLive(s) ? `<div class="row t" style="border-top:0;color:#9db4ff"><span>Releases</span><span>${s.releaseDate}</span></div>` : "";
+  const schedLine = !isLive(s) ? `<div class="row t" style="border-top:0;color:#9db4ff"><span>Releases</span><span>${fmtDate(s.releaseDate)}</span></div>` : "";
   return `<h4>${esc(s.name)}</h4><div class="rar">${esc(s.rarity)}</div>`+
    FIELDS.map(([k,l])=>`<div class="row"><span>${l}</span><span>${s.ratings[k]}/10</span></div>`).join("")+
    `<div class="row t"><span>Total</span><span>${total(s)}/40</span></div>`+schedLine;
@@ -370,7 +375,7 @@ const veil=document.getElementById("veil"), modal=document.getElementById("modal
 function openModal(id){
   const s=byId(id); if(!s) return; tip.style.display="none";
   const v=votes[id]||{up:0,down:0,mine:null};
-  const schedLine = !isLive(s) ? `<div class="rdate">Releases ${s.releaseDate} · admin-only until then</div>` : "";
+  const schedLine = !isLive(s) ? `<div class="rdate">Releases ${fmtDate(s.releaseDate)} · admin-only until thenReleases ${s.releaseDate} · admin-only until then</div>` : "";
   modal.innerHTML=`
    <div class="mh">${cardHTML(s).replace('<button','<span').replace('</button>','</span>')}
      <div><h2>${esc(s.name)}</h2><div class="rar">${esc(s.rarity)}</div>${schedLine}</div>
@@ -440,9 +445,13 @@ function saveSkin(editId){
   render();
   const m=document.getElementById("formMsg");
   if(m) m.textContent = skinObj.releaseDate && skinObj.releaseDate>todayStr()
-    ? `Saved “${name}” — queued to release ${skinObj.releaseDate}.`
+    ? `Saved “${name}” — queued to release ${fmtDate(skinObj.releaseDate)}.`
     : `Saved “${name}” — live now.`;
 }
+
+document.addEventListener("input",e=>{
+  if(e.target.id==="f_release"){ const p=document.getElementById("relPreview"); if(p) p.textContent=fmtDate(e.target.value); }
+});
 
 /* nav */
 document.getElementById("navBoard").onclick=()=>{page="board";render()};
